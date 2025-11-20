@@ -47,7 +47,7 @@ func (r *Router) SetupRoutes() error {
 	// Start server
 	port := config.Get().Port
 	if port == "" {
-		port = ":1328" // fallback default
+		port = ":1330" // fallback default
 	}
 	if port[0] != ':' {
 		port = ":" + port

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 )
 
@@ -11,9 +10,9 @@ func SetupGlobalMiddleware(e *echo.Echo) {
 	e.Use(Recover())
 
 	// Add Sentry middleware
-	e.Use(sentryecho.New(sentryecho.Options{
-		Repanic: false, // Already handled by custom Recover() middleware
-	}))
+	// e.Use(sentryecho.New(sentryecho.Options{
+	// 	Repanic: false, // Already handled by custom Recover() middleware
+	// }))
 
 	// Add request logging middleware
 	e.Use(RequestLogger())

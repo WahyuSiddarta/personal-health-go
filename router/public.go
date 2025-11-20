@@ -22,9 +22,6 @@ func (r *Router) setupPublicRoutes(apiGroup *echo.Group) {
 		return helper.JsonResponse(c, http.StatusOK, healthData)
 	})
 
-	// TEST endpoint - accessible at /api/public/test
-	rpub.GET("/test", r.API.Test)
-
 	// Test panic recovery - accessible at /api/public/test-panic (for testing only)
 	rpub.GET("/test-panic", func(c echo.Context) error {
 		// This endpoint intentionally panics to test the recover middleware

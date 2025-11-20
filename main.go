@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +19,6 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 )
 
@@ -68,40 +66,7 @@ func initializeSystem() *api.API {
 	}
 	Logger.Level(loglevel)
 
-	// Initialize Sentry
-	if configStruct.SentryDSN != "" {
-		// Set sampling rate based on environment
-		// Development: 100% sampling (capture all transactions)
-		// Production: 10% sampling (reduce server load)
-		tracesSampleRate := 1.0 // Default to 100% for development
-		if configStruct.Env == "production" {
-			tracesSampleRate = 0.1 // 10% for production
-		}
-
-		if err := sentry.Init(sentry.ClientOptions{
-			Dsn:              configStruct.SentryDSN,
-			Environment:      configStruct.Env,
-			Release:          configStruct.AppVersion,
-			EnableTracing:    true,
-			TracesSampleRate: tracesSampleRate,
-			BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
-				// Ignore health check requests to reduce noise
-				if event.Request != nil {
-					if strings.Contains(event.Request.URL, "/health") {
-						return nil
-					}
-				}
-				return event
-			},
-		}); err != nil {
-			Logger.Warn().Err(err).Msg("Sentry initialization failed")
-		} else {
-			Logger.Info().Msgf("System initialization started - 3 / 7 - Sentry initialized (TracesSampleRate: %.1f%%)", tracesSampleRate*100)
-		}
-	} else {
-		Logger.Info().Msg("Sentry DSN not configured, skipping Sentry initialization")
-	}
-
+	Logger.Info().Msg("Sentry init - 4 / 7 - BYPASSING SENTRY INIT")
 	// Create Echo instance
 	Logger.Info().Msg("System initialization started - 4 / 7 - Echo instance created")
 	echoInstance := echo.New()
@@ -181,6 +146,6 @@ func main() {
 	}
 
 	// Flush Sentry
-	middleware.FlushSentry(5)
+	// middleware.FlushSentry(5)
 	Logger.Info().Msg("Application fully shutdown")
 }

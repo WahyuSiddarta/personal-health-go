@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -58,14 +57,12 @@ func (h *AuthHandlers) Login(c echo.Context) error {
 	// Find user by email
 	user, err := h.repo.FindByEmail(req.Email)
 	if err != nil {
-		middleware.CaptureException(c, err)
+
 		Logger.Error().Err(err).Str("email", req.Email).Msg("[Login] Gagal mencari pengguna saat login")
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Terjadi kesalahan server", nil)
 	}
 
 	if user == nil {
-		err := errors.New("[login] user not found")
-		middleware.CaptureException(c, err)
 		return helper.ErrorResponse(c, http.StatusBadRequest, "Email atau password tidak valid", nil)
 	}
 
@@ -79,14 +76,10 @@ func (h *AuthHandlers) Login(c echo.Context) error {
 		return helper.ErrorResponse(c, http.StatusForbidden, "Akses akun ditolak", nil)
 	}
 
-	middleware.SetUserContext(c, user.ID, user.Email)
 	// Generate JWT token
 	token, err := middleware.GenerateToken(user.ID)
 	if err != nil {
-		middleware.CaptureError(c, err,
-			map[string]string{"action": "generate_token"},
-			nil,
-		)
+
 		Logger.Error().Err(err).Int("user_id", user.ID).Msg("[Login] Gagal membuat token")
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Terjadi kesalahan server", nil)
 	}
@@ -107,7 +100,7 @@ func (h *AuthHandlers) Register(c echo.Context) error {
 	// Check if user already exists
 	existingUser, err := h.repo.FindByEmail(req.Email)
 	if err != nil {
-		middleware.CaptureException(c, err)
+
 		Logger.Error().Err(err).Str("email", req.Email).Msg("[Register] Gagal memeriksa pengguna saat registrasi")
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Terjadi kesalahan server", nil)
 	}
@@ -137,10 +130,7 @@ func (h *AuthHandlers) Register(c echo.Context) error {
 	// Create new user
 	newUser, err := h.repo.Create(createReq)
 	if err != nil {
-		middleware.CaptureError(c, err,
-			map[string]string{"action": "CreateUser"},
-			map[string]interface{}{"email": req.Email},
-		)
+
 		Logger.Error().Err(err).Str("email", req.Email).Msg("[Register] Gagal membuat pengguna saat registrasi")
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Terjadi kesalahan server", nil)
 	}
@@ -148,16 +138,12 @@ func (h *AuthHandlers) Register(c echo.Context) error {
 	// Generate JWT token
 	token, err := middleware.GenerateToken(newUser.ID)
 	if err != nil {
-		middleware.CaptureError(c, err,
-			map[string]string{"action": "generate_token"},
-			nil,
-		)
+
 		Logger.Error().Err(err).Int("user_id", newUser.ID).Msg("[Register] Gagal membuat token untuk pengguna baru")
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Terjadi kesalahan server", nil)
 	}
 
 	Logger.Info().Str("email", req.Email).Int("user_id", newUser.ID).Msg("[Register] Pengguna baru berhasil didaftarkan")
-	middleware.SetUserContext(c, newUser.ID, newUser.Email)
 
 	return helper.JsonResponse(c, http.StatusCreated, validator.RegisterData{
 		User:  newUser,
