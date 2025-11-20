@@ -1,3 +1,6 @@
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -39,6 +42,7 @@ Thumbs.db
 .env.test.local
 .env.production.local
 .env.example
+
 # Log files
 *.log
 /log/
@@ -62,6 +66,8 @@ vendor/
 coverage.txt
 coverage.out
 *.cover
+*.coverprofile
+profile.cov
 
 # Go module cache
 go.sum
