@@ -174,11 +174,6 @@ func (h *AuthHandlers) UpdateUserLevel(c echo.Context) error {
 	// Get validated request from middleware
 	req := validator.GetValidatedRequest(c).(*validator.UpdateUserLevelRequest)
 
-	// Validate custom logic
-	if errs := validator.CustomValidation(req); len(errs) > 0 {
-		return helper.ErrorResponse(c, http.StatusBadRequest, "Kesalahan validasi", errs)
-	}
-
 	// Get admin user ID for audit trail
 	adminUser, err := middleware.GetAuthUser(c)
 	if err != nil {

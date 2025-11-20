@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/WahyuSiddarta/be_saham_go/helper"
-	"github.com/WahyuSiddarta/be_saham_go/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
@@ -27,43 +26,26 @@ func init() {
 	})
 
 	// Register custom validators
-	validate.RegisterValidation("user_status", validateUserStatus)
-	validate.RegisterValidation("user_level", validateUserLevel)
+	validate.RegisterValidation("decimal2", validateDecimalPlaces)
 }
 
-// validateUserStatus validates user status enum
-func validateUserStatus(fl validator.FieldLevel) bool {
-	status := fl.Field().String()
-	validStatuses := []string{
-		string(models.UserStatusActive),
-		string(models.UserStatusInactive),
-		string(models.UserStatusSuspended),
-		string(models.UserStatusBanned),
+// validateDecimalPlaces validates that a float64 has at most 2 decimal places
+func validateDecimalPlaces(fl validator.FieldLevel) bool {
+	value := fl.Field().Float()
+
+	// Use string formatting to check decimal places to avoid floating point precision issues
+	formatted := fmt.Sprintf("%.10f", value) // Format with 10 decimal places
+
+	// Find the decimal point
+	dotIndex := strings.Index(formatted, ".")
+	if dotIndex == -1 {
+		return true // No decimal point means it's a whole number
 	}
 
-	for _, validStatus := range validStatuses {
-		if status == validStatus {
-			return true
-		}
-	}
-	return false
-}
+	// Count significant decimal places (excluding trailing zeros)
+	decimalPart := strings.TrimRight(formatted[dotIndex+1:], "0")
 
-// validateUserLevel validates user level enum
-func validateUserLevel(fl validator.FieldLevel) bool {
-	level := fl.Field().String()
-	validLevels := []string{
-		string(models.UserLevelFree),
-		string(models.UserLevelPremium),
-		string(models.UserLevelPremiumPlus),
-	}
-
-	for _, validLevel := range validLevels {
-		if level == validLevel {
-			return true
-		}
-	}
-	return false
+	return len(decimalPart) <= 2
 }
 
 // ValidateStruct validates a struct and returns formatted errors
@@ -87,7 +69,7 @@ func ValidateStruct(s interface{}) []ValidationError {
 	return errors
 }
 
-// getValidationMessage returns user-friendly validation messages in Indonesian
+// getValidationMessage returns user-friendly validation messages in English
 func getValidationMessage(err validator.FieldError) string {
 	field := err.Field()
 	tag := err.Tag()
@@ -95,30 +77,28 @@ func getValidationMessage(err validator.FieldError) string {
 
 	switch tag {
 	case "required":
-		return fmt.Sprintf("%s wajib diisi", field)
+		return fmt.Sprintf("%s is required", field)
 	case "email":
-		return "Silakan masukkan alamat email yang valid"
+		return "Please enter a valid email address"
 	case "min":
 		if field == "password" {
-			return fmt.Sprintf("Password minimal %s karakter", param)
+			return fmt.Sprintf("Password must be at least %s characters", param)
 		}
-		return fmt.Sprintf("%s minimal %s karakter", field, param)
+		return fmt.Sprintf("%s must be at least %s characters", field, param)
 	case "max":
-		return fmt.Sprintf("%s tidak boleh melebihi %s karakter", field, param)
+		return fmt.Sprintf("%s must not exceed %s characters", field, param)
 	case "eqfield":
-		return fmt.Sprintf("%s harus sama dengan %s", field, param)
+		return fmt.Sprintf("%s must match %s", field, param)
 	case "gt":
-		return fmt.Sprintf("%s harus lebih besar dari %s", field, param)
+		return fmt.Sprintf("%s must be greater than %s", field, param)
 	case "gte":
-		return fmt.Sprintf("%s harus lebih besar atau sama dengan %s", field, param)
-	case "user_status":
-		return "Status harus salah satu dari: active, inactive, suspended, banned"
-	case "user_level":
-		return "Level pengguna harus salah satu dari: free, premium, premium+"
+		return fmt.Sprintf("%s must be greater than or equal to %s", field, param)
+	case "decimal2":
+		return fmt.Sprintf("%s can only have a maximum of 2 decimal places", field)
 	case "datetime":
-		return "Format tanggal tidak valid. Gunakan format ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)"
+		return "Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)"
 	default:
-		return fmt.Sprintf("%s tidak valid", field)
+		return fmt.Sprintf("%s is invalid", field)
 	}
 }
 
@@ -132,17 +112,17 @@ func ValidateRequest(requestType interface{}) echo.MiddlewareFunc {
 			// Bind request body to struct
 			if err := c.Bind(req); err != nil {
 				if helper.Logger != nil {
-					helper.Logger.Warn().Err(err).Msg("Format request tidak valid saat binding")
+					helper.Logger.Warn().Err(err).Msg("Invalid request format during binding")
 				}
-				return helper.ErrorResponse(c, http.StatusBadRequest, "Format request tidak valid", nil)
+				return helper.ErrorResponse(c, http.StatusBadRequest, "Invalid request format", nil)
 			}
 
 			// Validate the struct
 			if errs := ValidateStruct(req); len(errs) > 0 {
 				if helper.Logger != nil {
-					helper.Logger.Warn().Int("error_count", len(errs)).Msg("Kesalahan validasi request")
+					helper.Logger.Warn().Int("error_count", len(errs)).Msg("Request validation errors")
 				}
-				return helper.ErrorResponse(c, http.StatusBadRequest, "Kesalahan validasi", errs)
+				return helper.ErrorResponse(c, http.StatusBadRequest, "Validation errors", errs)
 			}
 
 			// Store validated request in context
@@ -162,17 +142,17 @@ func ValidateQuery(queryType interface{}) echo.MiddlewareFunc {
 			// Bind query parameters to struct
 			if err := c.Bind(query); err != nil {
 				if helper.Logger != nil {
-					helper.Logger.Warn().Err(err).Msg("Parameter query tidak valid saat binding")
+					helper.Logger.Warn().Err(err).Msg("Invalid query parameters during binding")
 				}
-				return helper.ErrorResponse(c, http.StatusBadRequest, "Parameter query tidak valid", nil)
+				return helper.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", nil)
 			}
 
 			// Validate the struct
 			if errs := ValidateStruct(query); len(errs) > 0 {
 				if helper.Logger != nil {
-					helper.Logger.Warn().Int("error_count", len(errs)).Msg("Kesalahan validasi query")
+					helper.Logger.Warn().Int("error_count", len(errs)).Msg("Query validation errors")
 				}
-				return helper.ErrorResponse(c, http.StatusBadRequest, "Kesalahan validasi query", errs)
+				return helper.ErrorResponse(c, http.StatusBadRequest, "Query validation errors", errs)
 			}
 
 			// Store validated query in context
@@ -190,56 +170,4 @@ func GetValidatedRequest(c echo.Context) interface{} {
 // GetValidatedQuery retrieves validated query from context
 func GetValidatedQuery(c echo.Context) interface{} {
 	return c.Get("validated_query")
-}
-
-// CustomValidation handles custom validation logic for complex scenarios
-func CustomValidation(req interface{}) []ValidationError {
-	var errors []ValidationError
-
-	// Handle specific custom validations
-	switch v := req.(type) {
-	case *UpdateUserLevelRequest:
-		// If payment data is provided, ensure it's for premium tiers
-		if v.PaymentData != nil && v.UserLevel == models.UserLevelFree {
-			errors = append(errors, ValidationError{
-				Field:   "payment_data",
-				Message: "Data pembayaran hanya dapat diberikan untuk tier premium",
-				Tag:     "custom",
-			})
-		}
-
-		// If user level is premium, validate payment data is provided
-		if (v.UserLevel == models.UserLevelPremium || v.UserLevel == models.UserLevelPremiumPlus) &&
-			v.PaymentData != nil {
-			// Additional payment validation logic can be added here
-			if v.PaymentData.OriginalPrice <= 0 {
-				errors = append(errors, ValidationError{
-					Field:   "payment_data.original_price",
-					Message: "Harga asli harus lebih besar dari 0",
-					Tag:     "custom",
-				})
-			}
-			if v.PaymentData.PaidPrice < 0 {
-				errors = append(errors, ValidationError{
-					Field:   "payment_data.paid_price",
-					Message: "Harga yang dibayar tidak boleh negatif",
-					Tag:     "custom",
-				})
-			}
-		}
-	}
-
-	return errors
-}
-
-// ValidateAndCustom combines struct validation with custom validation
-func ValidateAndCustom(req interface{}) []ValidationError {
-	// Standard struct validation
-	errors := ValidateStruct(req)
-
-	// Add custom validation errors
-	customErrors := CustomValidation(req)
-	errors = append(errors, customErrors...)
-
-	return errors
 }

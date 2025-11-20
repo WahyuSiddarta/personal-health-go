@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/WahyuSiddarta/be_saham_go/api"
 	"github.com/WahyuSiddarta/be_saham_go/models"
+	"github.com/WahyuSiddarta/be_saham_go/validator"
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,4 +24,5 @@ func setupUserRoutes(group *echo.Group) {
 	userHandlers := api.NewUserHandlers(userRepo)
 
 	usersGroup.GET("/personal-target", userHandlers.GetPersonalTarget)
+	usersGroup.PUT("/personal-target/nutrition", userHandlers.UpdatePersonalNutritionTarget, validator.ValidateRequest(&validator.PersonalNutritionTargetRequest{}))
 }
