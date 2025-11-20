@@ -27,6 +27,8 @@ func init() {
 
 	// Register custom validators
 	validate.RegisterValidation("decimal2", validateDecimalPlaces)
+	validate.RegisterValidation("nutrition_category", validateNutritionCategory)
+	validate.RegisterValidation("caloric_calculation", validateCaloricCalculation)
 }
 
 // validateDecimalPlaces validates that a float64 has at most 2 decimal places
@@ -46,6 +48,40 @@ func validateDecimalPlaces(fl validator.FieldLevel) bool {
 	decimalPart := strings.TrimRight(formatted[dotIndex+1:], "0")
 
 	return len(decimalPart) <= 2
+}
+
+// validateNutritionCategory validates that a nutrition category is one of the allowed values
+func validateNutritionCategory(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	category := NutritionCategory(value)
+	return category.IsValid()
+}
+
+// validateCaloricCalculation validates that the caloric value matches the calculation from macronutrients
+func validateCaloricCalculation(fl validator.FieldLevel) bool {
+	// Get the parent struct
+	parent := fl.Parent()
+
+	// Extract field values from the struct
+	caloric := fl.Field().Float()
+	fat := parent.FieldByName("Fat").Float()
+	protein := parent.FieldByName("Protein").Float()
+	carbohydrate := parent.FieldByName("Carbohydrate").Float()
+
+	// Use the checkCaloricValue function logic
+	expectedCaloric := (fat * 9) + (protein * 4) + (carbohydrate * 4)
+
+	// Allow small floating point tolerance (0.1 calorie difference)
+	tolerance := 0.1
+	return abs(caloric-expectedCaloric) <= tolerance
+}
+
+// abs returns the absolute value of a float64
+func abs(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // ValidateStruct validates a struct and returns formatted errors
@@ -95,6 +131,10 @@ func getValidationMessage(err validator.FieldError) string {
 		return fmt.Sprintf("%s must be greater than or equal to %s", field, param)
 	case "decimal2":
 		return fmt.Sprintf("%s can only have a maximum of 2 decimal places", field)
+	case "nutrition_category":
+		return fmt.Sprintf("%s must be one of: breakfast, lunch, dinner, snack", field)
+	case "caloric_calculation":
+		return fmt.Sprintf("%s does not match the calculated value from macronutrients (fat×9 + protein×4 + carbohydrate×4)", field)
 	case "datetime":
 		return "Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)"
 	default:
