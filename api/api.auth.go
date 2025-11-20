@@ -14,11 +14,11 @@ import (
 
 // AuthHandlers contains all authentication-related handlers
 type AuthHandlers struct {
-	repo models.UserRepository
+	repo models.UserAuthRepository
 }
 
 // NewAuthHandlers creates a new instance of auth handlers
-func NewAuthHandlers(repo models.UserRepository) *AuthHandlers {
+func NewAuthHandlers(repo models.UserAuthRepository) *AuthHandlers {
 	return &AuthHandlers{repo: repo}
 }
 

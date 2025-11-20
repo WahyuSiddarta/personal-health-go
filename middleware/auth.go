@@ -131,7 +131,7 @@ func AuthMiddleware() echo.MiddlewareFunc {
 			}
 
 			// Get user from database to ensure user still exists and get current data
-			userRepo := models.NewUserRepository()
+			userRepo := models.NewUserAuthRepository()
 			user, err := userRepo.FindByID(claims.UserID)
 			if err != nil {
 				Logger.Error().Err(err).Msg("[AuthMiddleware] Gagal mengambil data pengguna")
@@ -171,61 +171,6 @@ func AuthMiddleware() echo.MiddlewareFunc {
 // RequireAuth returns a middleware that requires authentication
 func RequireAuth() echo.MiddlewareFunc {
 	return AuthMiddleware()
-}
-
-// RequirePremium returns a middleware that requires premium subscription
-func RequirePremium() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Get authenticated user from context
-			authUser, ok := c.Get("user").(*AuthUser)
-			if !ok {
-				Logger.Warn().Msg("[RequirePremium] Missing authenticated user in context")
-				return helper.ErrorResponse(c, http.StatusUnauthorized, "Authentication required", nil)
-			}
-
-			// Check if user has premium subscription
-			if authUser.UserLevel == models.UserLevelFree {
-				return helper.ErrorResponse(c, http.StatusForbidden, "Premium subscription required", nil)
-			}
-
-			// Check if premium subscription has expired
-			if authUser.PremiumExpiresAt != nil && authUser.PremiumExpiresAt.Before(time.Now()) {
-				return helper.ErrorResponse(c, http.StatusForbidden, "Premium subscription expired", nil)
-			}
-
-			return next(c)
-		}
-	}
-}
-
-// RequirePremiumPlus returns a middleware that requires premium+ subscription
-func RequirePremiumPlus() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Get authenticated user from context
-			authUser, ok := c.Get("user").(*AuthUser)
-			if !ok {
-				Logger.Warn().Msg("[RequirePremiumPlus] Missing authenticated user in context")
-				return helper.ErrorResponse(c, http.StatusUnauthorized, "Authentication required", nil)
-			}
-
-			// Check if user has premium+ subscription
-			if authUser.UserLevel != models.UserLevelPremiumPlus {
-				Logger.Warn().Str("user_level", string(authUser.UserLevel)).Msg("[RequirePremiumPlus] Non-premium+ user attempted premium+ route")
-				return helper.ErrorResponse(c, http.StatusForbidden, "Premium+ subscription required", nil)
-			}
-
-			// Check if premium+ subscription has expired
-			if authUser.PremiumExpiresAt != nil && authUser.PremiumExpiresAt.Before(time.Now()) {
-				Logger.Warn().Str("user_level", string(authUser.UserLevel)).Msg("[RequirePremiumPlus] Premium+ subscription expired")
-
-				return helper.ErrorResponse(c, http.StatusForbidden, "Premium+ subscription expired", nil)
-			}
-
-			return next(c)
-		}
-	}
 }
 
 // GetAuthUser retrieves authenticated user from context
@@ -271,7 +216,7 @@ func OptionalAuth() echo.MiddlewareFunc {
 			}
 
 			// Get user from database
-			userRepo := models.NewUserRepository()
+			userRepo := models.NewUserAuthRepository()
 			user, err := userRepo.FindByID(claims.UserID)
 			if err != nil || user == nil {
 				// User not found, continue without setting user context
@@ -295,42 +240,6 @@ func OptionalAuth() echo.MiddlewareFunc {
 
 			c.Set("user", authUser)
 			c.Set("user_id", user.ID)
-
-			return next(c)
-		}
-	}
-}
-
-// AdminRequired middleware that requires admin privileges
-func AdminRequired() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// For now, this is a placeholder. In a real implementation,
-			// you would check for admin role in the user model or JWT claims
-
-			authUser, err := GetAuthUser(c)
-			if err != nil {
-				Logger.Warn().Err(err).Msg("[AdminRequired] Authentication required")
-				return helper.ErrorResponse(c, http.StatusUnauthorized, "Authentication required", nil)
-			}
-
-			// TODO: Implement proper admin role checking
-			// For now, we'll use a simple check based on user ID or email
-			// In production, you should have a proper role system
-
-			adminEmails := []string{"admin@example.com", "superadmin@example.com"}
-			isAdmin := false
-			for _, adminEmail := range adminEmails {
-				if authUser.Email == adminEmail {
-					isAdmin = true
-					break
-				}
-			}
-
-			if !isAdmin {
-				Logger.Warn().Str("email", authUser.Email).Msg("[AdminRequired] Non-admin user attempted admin route")
-				return helper.ErrorResponse(c, http.StatusForbidden, "Admin access required", nil)
-			}
 
 			return next(c)
 		}

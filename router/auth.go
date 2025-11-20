@@ -11,7 +11,7 @@ import (
 func (r *Router) setupAuthRoutes(apiGroup *echo.Group) {
 
 	// Initialize auth handlers
-	userRepo := models.NewUserRepository()
+	userRepo := models.NewUserAuthRepository()
 	authHandlers := api.NewAuthHandlers(userRepo)
 
 	// Authentication routes (no auth required)
