@@ -32,17 +32,10 @@ func (r *userRepository) FindPersonalTarget(userID int) (*UserTarget, error) {
 	}
 
 	var user UserTarget
-	query := `INSERT INTO users (email, password, status, user_level) 
-			  VALUES ($1, $2, $3, $4) 
-			  RETURNING id, email, status, user_level, premium_expires_at, created_at, updated_at`
+	query := `SELECT 
+	id, user_id, nutrition_caloric, nutrition_protein, nutrition_carbs,
+	nutrition_fat FROM user_targets WHERE user_id = $1`
 
-	err := db.Get(&user, query, r)
-	if err != nil {
-		if err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"` {
-			return nil, fmt.Errorf("user with this email already exists")
-		}
-		return nil, fmt.Errorf("error creating user: %w", err)
-	}
-
-	return &user, nil
+	err := db.Get(&user, query, userID)
+	return &user, err
 }

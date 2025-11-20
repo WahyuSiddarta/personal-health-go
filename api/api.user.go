@@ -19,5 +19,11 @@ func NewUserHandlers(repo models.UserRepository) *UsersHandlers {
 
 func (h *UsersHandlers) GetPersonalTarget(c echo.Context) error {
 	var userId int = 1 // Replace with actual user ID retrieval logic
-	return helper.JsonResponse(c, http.StatusOK, userId)
+
+	userTarget, err := h.repo.FindPersonalTarget(userId)
+	if err != nil {
+		Logger.Error().Err(err).Msg("[GetPersonalTarget - FindPersonalTarget] Failed to get personal target")
+		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get personal target", nil)
+	}
+	return helper.JsonResponse(c, http.StatusOK, userTarget)
 }
