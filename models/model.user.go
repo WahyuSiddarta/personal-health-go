@@ -9,6 +9,9 @@ type UserTarget struct {
 	NutritionProtein float64 `json:"nutrition_protein" db:"nutrition_protein"`
 	NutritionCarbs   float64 `json:"nutrition_carbohydrate" db:"nutrition_carbohydrate"`
 	NutritionFat     float64 `json:"nutrition_fat" db:"nutrition_fat"`
+	BodyWeight       float64 `json:"bodyweight" db:"bodyweight"`
+	ViceralFat       float64 `json:"viceral_fat" db:"viceral_fat"`
+	FatPercentage    float64 `json:"fat_percentage" db:"fat_percentage"`
 }
 
 // userRepository implements UserRepository interface
@@ -23,6 +26,7 @@ func NewUserRepository() UserRepository {
 type UserRepository interface {
 	FindPersonalTarget(userID int) (*UserTarget, error)
 	UpdatePersonalNutritionTarget(userTarget *UserTarget) error
+	UpdatePersonalBodyMeasurementTarget(userTarget *UserTarget) error
 }
 
 // FindPersonalTarget retrieves the personal target for a given user ID
@@ -35,10 +39,24 @@ func (r *userRepository) FindPersonalTarget(userID int) (*UserTarget, error) {
 	var user UserTarget
 	query := `SELECT 
 	target_id, user_id, nutrition_caloric, nutrition_protein, nutrition_carbohydrate,
-	nutrition_fat FROM users_target WHERE user_id = $1`
+	nutrition_fat, bodyweight, viceral_fat, fat_percentage FROM users_target WHERE user_id = $1`
 
 	err := db.Get(&user, query, userID)
 	return &user, err
+}
+
+// UpdatePersonalBodyMeasurementTarget updates the personal target for a user
+func (r *userRepository) UpdatePersonalBodyMeasurementTarget(userTarget *UserTarget) error {
+	db := GetDB().PostgreDBManager.RW
+	if db == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+
+	query := `UPDATE users_target SET 
+	bodyweight = $1, viceral_fat = $2, fat_percentage = $3
+	WHERE user_id = $4`
+	_, err := db.Exec(query, userTarget.BodyWeight, userTarget.ViceralFat, userTarget.FatPercentage, userTarget.UserId)
+	return err
 }
 
 // UpdatePersonalTarget updates the personal target for a user

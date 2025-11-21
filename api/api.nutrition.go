@@ -21,6 +21,21 @@ func NewNutritionHandlers(repo models.NutritionRepository) *NutritionHandlers {
 	return &NutritionHandlers{repo: repo}
 }
 
+// / Overview Nutrition Handlers
+func (h *NutritionHandlers) GetNutritionChartData(c echo.Context) error {
+	var userId int = 1 // Replace with actual user ID retrieval logic
+
+	chartData, err := h.repo.GetNutritionChartData(userId)
+	if err != nil {
+		Logger.Error().Err(err).Msg("[GetNutritionChartData] Failed to get nutrition chart data")
+		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get nutrition chart data", nil)
+	}
+
+	Logger.Info().Msgf("[GetNutritionChartData] Retrieved nutrition chart data for user %d", userId)
+	return helper.JsonResponse(c, http.StatusOK, chartData)
+}
+
+// / Daily Nutrition Intake Handlers
 func (h *NutritionHandlers) GetTodaysNutritionIntake(c echo.Context) error {
 	var userId int = 1 // Replace with actual user ID retrieval logic
 

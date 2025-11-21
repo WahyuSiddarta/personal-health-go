@@ -34,6 +34,9 @@ type Config struct {
 
 	// Database Configuration
 	Database DatabaseConfig
+
+	// System Variables
+	PaginationDefaultPageSize int
 }
 
 // JWTConfig holds JWT configuration
@@ -129,6 +132,7 @@ func Load() (*Config, error) {
 				MaxIdle:  getEnvAsInt("DB_RC_MAX_IDLE", 10),
 			},
 		},
+		PaginationDefaultPageSize: getEnvAsInt("PAGINATION_DEFAULT_PAGE_SIZE", 20),
 	}
 
 	return config, nil

@@ -54,6 +54,15 @@ const (
 	NutritionCategorySnack     NutritionCategory = "snack"
 )
 
+type NutritionChartData struct {
+	UserId       int     `json:"user_id" db:"user_id"`
+	Fat          float64 `json:"fat" db:"fat"`
+	Protein      float64 `json:"protein" db:"protein"`
+	Carbohydrate float64 `json:"carbohydrate" db:"carbohydrate"`
+	Caloric      float64 `json:"caloric" db:"caloric"`
+	Period       string  `json:"period" db:"period"`
+}
+
 // nutritionRepository implements NutritionRepository interface
 type nutritionRepository struct{}
 
@@ -68,8 +77,43 @@ type NutritionRepository interface {
 	UpdateTodayIntake(nutritionTracker *NutritionTracker) error
 	AddTodayIntake(nutritionTracker *NutritionTracker) error
 	FindUserTodayIntake(userID int) ([]NutritionTracker, error)
+
+	GetNutritionChartData(userID int) ([]NutritionChartData, error)
 }
 
+// / Overview Nutrition Handlers
+func (r *nutritionRepository) GetNutritionChartData(userID int) ([]NutritionChartData, error) {
+	db := GetDB().PostgreDBManager.RW
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+
+	var query string = `SELECT
+    TO_CHAR(time_slice_date, 'YYYY-MM-DD') AS time_slice_label,
+    SUM(fat) AS total_fat,
+    SUM(protein) AS total_protein,
+    SUM(carbohydrate) AS total_carbohydrate,
+    SUM(caloric) AS total_caloric
+FROM (
+    SELECT
+        DATE(created_at AT TIME ZONE 'Asia/Makassar') AS time_slice_date,
+        fat,
+        protein,
+        carbohydrate,
+        caloric
+    FROM public.users_food_intake
+    WHERE user_id = $1
+      AND created_at AT TIME ZONE 'Asia/Makassar' >= (NOW() AT TIME ZONE 'Asia/Makassar') - INTERVAL '366 days'
+) AS T
+GROUP BY time_slice_date
+ORDER BY time_slice_date DESC;`
+
+	var chartData []NutritionChartData
+	err := db.Select(&chartData, query, userID)
+	return chartData, err
+}
+
+// / Daily Nutrition Intake Handlers
 // DeleteTodayIntake deletes today's food intake for a user
 func (r *nutritionRepository) DeleteTodayIntake(userID, foodId int) error {
 	db := GetDB().PostgreDBManager.RW
@@ -133,8 +177,8 @@ func (r *nutritionRepository) FindUserTodayIntake(userID int) ([]NutritionTracke
 	protein, carbohydrate, caloric, name 
  FROM users_food_intake 
  WHERE user_id = $1 
- AND created_at AT TIME ZONE 'Asia/Jakarta' >= CURRENT_DATE AT TIME ZONE 'Asia/Jakarta'
- AND created_at AT TIME ZONE 'Asia/Jakarta' < (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE 'Asia/Jakarta'`
+ AND created_at AT TIME ZONE 'Asia/Makassar' >= CURRENT_DATE AT TIME ZONE 'Asia/Makassar'
+ AND created_at AT TIME ZONE 'Asia/Makassar' < (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE 'Asia/Makassar'`
 
 	err := db.Select(&users, query, userID)
 	return users, err
