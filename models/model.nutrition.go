@@ -56,11 +56,11 @@ const (
 
 type NutritionChartData struct {
 	UserId       int     `json:"user_id" db:"user_id"`
-	Fat          float64 `json:"fat" db:"fat"`
-	Protein      float64 `json:"protein" db:"protein"`
-	Carbohydrate float64 `json:"carbohydrate" db:"carbohydrate"`
-	Caloric      float64 `json:"caloric" db:"caloric"`
-	Period       string  `json:"period" db:"period"`
+	Fat          float64 `json:"total_fat" db:"total_fat"`
+	Protein      float64 `json:"total_protein" db:"total_protein"`
+	Carbohydrate float64 `json:"total_carbohydrate" db:"total_carbohydrate"`
+	Caloric      float64 `json:"total_caloric" db:"total_caloric"`
+	Period       string  `json:"time_slice_label" db:"time_slice_label"`
 }
 
 // nutritionRepository implements NutritionRepository interface
@@ -106,7 +106,7 @@ FROM (
       AND created_at AT TIME ZONE 'Asia/Makassar' >= (NOW() AT TIME ZONE 'Asia/Makassar') - INTERVAL '366 days'
 ) AS T
 GROUP BY time_slice_date
-ORDER BY time_slice_date DESC;`
+ORDER BY time_slice_date DESC`
 
 	var chartData []NutritionChartData
 	err := db.Select(&chartData, query, userID)

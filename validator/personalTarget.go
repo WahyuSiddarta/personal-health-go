@@ -10,7 +10,7 @@ type PersonalNutritionTargetRequest struct {
 
 // PersonalBodyMeasurementTargetRequest represents the request payload for updating personal nutrition targets.
 type PersonalBodyMeasurementTargetRequest struct {
-	BodyWeight    float64 `json:"body_weight" validate:"gte=0,decimal2"`
+	BodyWeight    float64 `json:"bodyweight" validate:"gte=0,decimal2"`
 	ViceralFat    float64 `json:"viceral_fat" validate:"gte=0,decimal2"`
 	FatPercentage float64 `json:"fat_percentage" validate:"gte=0,decimal2"`
 }

@@ -55,6 +55,7 @@ func (r *userRepository) UpdatePersonalBodyMeasurementTarget(userTarget *UserTar
 	query := `UPDATE users_target SET 
 	bodyweight = $1, viceral_fat = $2, fat_percentage = $3
 	WHERE user_id = $4`
+	Logger.Debug().Msgf("Executing query: %s with values %+v", query, userTarget)
 	_, err := db.Exec(query, userTarget.BodyWeight, userTarget.ViceralFat, userTarget.FatPercentage, userTarget.UserId)
 	return err
 }
