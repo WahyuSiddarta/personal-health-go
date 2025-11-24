@@ -14,6 +14,7 @@ func (r *Router) setupProtectedRoutes(apiGroup *echo.Group) {
 	setupUserRoutes(protectedGroup)
 	setupFoodNutritionRoutes(protectedGroup)
 	setupBodyMeasurementRoutes(protectedGroup)
+	setupExcerciseRoutes(protectedGroup)
 }
 
 func setupUserRoutes(group *echo.Group) {
@@ -26,6 +27,21 @@ func setupUserRoutes(group *echo.Group) {
 	usersGroup.GET("/personal-target", userHandlers.GetPersonalTarget)
 	usersGroup.PUT("/personal-target/nutrition", userHandlers.UpdatePersonalNutritionTarget, validator.ValidateRequest(&validator.PersonalNutritionTargetRequest{}))
 	usersGroup.PUT("/personal-target/body-measurement", userHandlers.UpdatePersonalBodyMeasurementTarget, validator.ValidateRequest(&validator.PersonalBodyMeasurementTargetRequest{}))
+}
+
+func setupExcerciseRoutes(group *echo.Group) {
+	// Define exercise-related protected routes here
+	exerciseGroup := group.Group("/exercise-tracker")
+
+	// Initialize exercise handlers
+	exerciseRepo := models.NewexcerciseRecordRepository()
+	exerciseHandler := api.NewExcerciseHandlers(exerciseRepo)
+
+	// Daily exercise routes
+	exerciseGroup.GET("", exerciseHandler.GetUserExcercises, validator.ValidateQuery(&validator.ExerciseRequest{}))
+	exerciseGroup.POST("", exerciseHandler.AddExercise, validator.ValidateRequest(&validator.ExcerciseMutationRequest{}))
+	exerciseGroup.PUT("/:exercise_id", exerciseHandler.UpdateExercise, validator.ValidateRequest(&validator.ExcerciseMutationRequest{}))
+	exerciseGroup.DELETE("/:exercise_id", exerciseHandler.DeleteExercise)
 }
 
 func setupFoodNutritionRoutes(group *echo.Group) {

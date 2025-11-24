@@ -39,7 +39,18 @@ func (h *BodyMeasurementHandlers) GetBodyMeasurements(c echo.Context) error {
 		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get today's nutrition intake", nil)
 	}
 
-	return helper.JsonResponse(c, http.StatusOK, userMeasurements)
+	hasNext := false
+	if len(userMeasurements) > limit {
+		hasNext = true
+		userMeasurements = userMeasurements[:limit]
+	}
+
+	response := map[string]interface{}{
+		"measurements": userMeasurements,
+		"nextPage":     hasNext,
+	}
+
+	return helper.JsonResponse(c, http.StatusOK, response)
 }
 
 func (h *BodyMeasurementHandlers) AddBodyMeasurement(c echo.Context) error {

@@ -52,7 +52,7 @@ func NewBodyMeasurementRepository() BodyMeasurementRepository {
 // BodyMeasurement defines the interface for user data operations
 type BodyMeasurementRepository interface {
 	Create(userId int, data BodyMeasurement) error
-	GetByUserId(userId, page, limit int) ([]BodyMeasurement, error)
+	GetByUserId(userId, limit, page int) ([]BodyMeasurement, error)
 	Update(userId int, measurementId int, data *BodyMeasurement) error
 	Delete(userId int, measurementId int) error
 }
@@ -101,26 +101,29 @@ func (r *bodyMeasurementRepository) Create(userId int, data BodyMeasurement) err
 	VALUES ($1, $2, $3, $4, $5, $6, NOW())`
 
 	_, err := db.Exec(query,
-		data.UserId,
+		userId,
 		data.Bodyweight, data.ViceralFat,
 		data.FatPercentage, data.NickCm,
 		data.WaistCm)
 	return err
 }
 
-func (r *bodyMeasurementRepository) GetByUserId(userID, page, limit int) ([]BodyMeasurement, error) {
+func (r *bodyMeasurementRepository) GetByUserId(userID, limit, page int) ([]BodyMeasurement, error) {
 	db := GetDB().PostgreDBManager.RW
 	if db == nil {
 		return nil, fmt.Errorf("database connection is nil")
 	}
 
+	offset := (page - 1) * limit
+	limit = limit + 1
+
 	var measurements []BodyMeasurement
 	query := `SELECT 
 	measurement_id, user_id, bodyweight, viceral_fat,
-	fat_percentage, nick_cm, waist_cm, measured_at
- FROM body_measurement
- WHERE user_id = $1`
+	fat_percentage, nick_cm, waist_cm, measured_at 
+ FROM body_measurement 
+ WHERE user_id = $1 ORDER BY measured_at DESC LIMIT $2 OFFSET $3`
 
-	err := db.Select(&measurements, query, userID)
+	err := db.Select(&measurements, query, userID, limit, offset)
 	return measurements, err
 }
