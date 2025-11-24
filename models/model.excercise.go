@@ -10,9 +10,11 @@ import (
 type ExcerciseRecord struct {
 	ExcerciseId int       `json:"excercise_id" db:"excercise_id"`
 	UserId      int       `json:"user_id" db:"user_id"`
+	Name        string    `json:"name" db:"name"`
 	RecordAt    time.Time `json:"record_at" db:"record_at"`
 	Minute      *int      `json:"minute,omitempty" db:"minute"`
 	Caloric     int       `json:"caloric" db:"caloric"`
+	Intensity   string    `json:"intensity" validate:"required,oneof=Low Medium High"`
 	Type        string    `json:"type" db:"type"`
 }
 
@@ -22,16 +24,21 @@ func (a ExcerciseRecord) MarshalJSON() ([]byte, error) {
 		ExcerciseId int    `json:"excercise_id" db:"excercise_id"`
 		UserId      int    `json:"user_id" db:"user_id"`
 		RecordAt    string `json:"record_at" db:"record_at"`
+		Name        string `json:"name" db:"name"`
 		Minute      *int   `json:"minute,omitempty" db:"minute"`
 		Caloric     int    `json:"caloric" db:"caloric"`
+		Intensity   string `json:"intensity" validate:"required,oneof=Low Medium High"`
 		Type        string `json:"type" db:"type"`
 	}{
 		ExcerciseId: a.ExcerciseId,
 		UserId:      a.UserId,
-		RecordAt:    a.RecordAt.Format(time.RFC3339),
-		Minute:      a.Minute,
-		Caloric:     a.Caloric,
-		Type:        a.Type,
+		Name:        a.Name,
+
+		RecordAt:  a.RecordAt.Format(time.RFC3339),
+		Minute:    a.Minute,
+		Caloric:   a.Caloric,
+		Intensity: a.Intensity,
+		Type:      a.Type,
 	})
 }
 
@@ -73,10 +80,10 @@ func (r *excerciseRecordRepository) Update(userId int, excerciseId int, data *Ex
 	}
 
 	query := `UPDATE excercise_record SET
-	minute = $1, caloric = $2, type = $3
-	WHERE user_id = $4 AND excercise_id = $5`
+	minute = $1, caloric = $2, type = $3, intensity = $4, name = $5 
+	WHERE user_id = $6 AND excercise_id = $7`
 
-	_, err := db.Exec(query, data.Minute, data.Caloric, data.Type, userId, excerciseId)
+	_, err := db.Exec(query, data.Minute, data.Caloric, data.Type, data.Intensity, data.Name, userId, excerciseId)
 	return err
 }
 
@@ -88,13 +95,13 @@ func (r *excerciseRecordRepository) Create(userId int, data ExcerciseRecord) err
 	}
 
 	query := `INSERT INTO excercise_record
-	(user_id, minute, caloric, type, record_at)
-	VALUES ($1, $2, $3, $4, NOW())`
+	(user_id, minute, caloric, type, intensity, record_at, name)
+	VALUES ($1, $2, $3, $4, $5, NOW(), $6)`
 
 	_, err := db.Exec(query,
 		userId,
 		data.Minute, data.Caloric,
-		data.Type)
+		data.Type, data.Intensity, data.Name)
 
 	return err
 }
@@ -110,9 +117,9 @@ func (r *excerciseRecordRepository) GetByUserId(userID, limit, page int) ([]Exce
 
 	var records []ExcerciseRecord
 	query := `SELECT 
-	excercise_id, user_id, minute, caloric, type, record_at 
+	excercise_id, user_id, minute, caloric, type, intensity, record_at, name  
  FROM excercise_record 
- WHERE user_id = $1 AND is_deleted = null ORDER BY record_at DESC LIMIT $2 OFFSET $3`
+ WHERE user_id = $1 AND deleted_at IS NULL ORDER BY record_at DESC LIMIT $2 OFFSET $3`
 	err := db.Select(&records, query, userID, limit, offset)
 	return records, err
 }

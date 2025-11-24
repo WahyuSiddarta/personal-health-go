@@ -136,12 +136,12 @@ func (r *nutritionRepository) UpdateTodayIntake(nutritionTracker *NutritionTrack
 	}
 
 	query := `UPDATE users_food_intake SET 
-	fat = $1, protein = $2, carbohydrate = $3,
-	caloric = $4, name = $5 WHERE user_id = $6 AND food_id = $7`
+	fat = $1, protein = $2, carbohydrate = $3, category = $4,
+	caloric = $5, name = $6 WHERE user_id = $7 AND food_id = $8`
 
 	_, err := db.Exec(query, nutritionTracker.Fat, nutritionTracker.Protein,
-		nutritionTracker.Carbohydrate, nutritionTracker.Caloric,
-		nutritionTracker.Name, nutritionTracker.UserId, nutritionTracker.FoodId)
+		nutritionTracker.Carbohydrate, nutritionTracker.Category,
+		nutritionTracker.Caloric, nutritionTracker.Name, nutritionTracker.UserId, nutritionTracker.FoodId)
 	return err
 }
 

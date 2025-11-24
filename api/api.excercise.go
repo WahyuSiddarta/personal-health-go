@@ -35,8 +35,8 @@ func (h *ExcerciseHandlers) GetUserExcercises(c echo.Context) error {
 	limit := config.Get().PaginationDefaultPageSize
 	userMeasurements, err := h.repo.GetByUserId(userId, limit, page)
 	if err != nil && err != sql.ErrNoRows {
-		Logger.Error().Err(err).Msg("[GetUserExcercises] Failed to get today's nutrition intake")
-		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get today's nutrition intake", nil)
+		Logger.Error().Err(err).Msg("[GetUserExcercises] failed to get excercise records")
+		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get excercise records", nil)
 	}
 
 	hasNext := false
@@ -70,9 +70,11 @@ func (h *ExcerciseHandlers) AddExercise(c echo.Context) error {
 	}
 
 	newMeasurement := models.ExcerciseRecord{
-		Minute:  Minute,
-		Caloric: measurementRequest.Caloric,
-		Type:    measurementRequest.Type,
+		Name:      measurementRequest.Name,
+		Minute:    Minute,
+		Intensity: measurementRequest.Intensity,
+		Caloric:   measurementRequest.Caloric,
+		Type:      measurementRequest.Type,
 	}
 
 	err := h.repo.Create(userId, newMeasurement)
@@ -109,9 +111,11 @@ func (h *ExcerciseHandlers) UpdateExercise(c echo.Context) error {
 	}
 
 	updatedMeasurement := &models.ExcerciseRecord{
-		Minute:  Minute,
-		Caloric: measurementRequest.Caloric,
-		Type:    measurementRequest.Type,
+		Name:      measurementRequest.Name,
+		Minute:    Minute,
+		Intensity: measurementRequest.Intensity,
+		Caloric:   measurementRequest.Caloric,
+		Type:      measurementRequest.Type,
 	}
 
 	err = h.repo.Update(userId, excerciseId, updatedMeasurement)
