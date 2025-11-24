@@ -90,3 +90,37 @@ func (h *UsersHandlers) UpdatePersonalNutritionTarget(c echo.Context) error {
 
 	return helper.JsonResponse(c, http.StatusOK, userTarget)
 }
+
+func (h *UsersHandlers) UpdatePersonalExerciseTarget(c echo.Context) error {
+	var userId int = 1 // Replace with actual user ID retrieval logic
+
+	// Get validated request from middleware
+	validatedRequest := validator.GetValidatedRequest(c)
+	if validatedRequest == nil {
+		Logger.Error().Msg("[UpdatePersonalExerciseTarget] No validated request found in context")
+		return helper.ErrorResponse(c, http.StatusBadRequest, "Invalid request format", nil)
+	}
+
+	req, ok := validatedRequest.(*validator.PersonalExerciseTargetRequest)
+	if !ok {
+		Logger.Error().Msg("[UpdatePersonalExerciseTarget] Failed to cast validated request to PersonalExerciseTargetRequest")
+		return helper.ErrorResponse(c, http.StatusBadRequest, "Invalid request format", nil)
+	}
+
+	userTarget := &models.UserTarget{
+		UserId:                      userId,
+		WeeklyExerciseMinutes:       req.WeeklyExerciseMinutes,
+		WeeklyExcerciseSessions:     req.WeeklyExcerciseSessions,
+		WeeklyExcerciseCaloric:      req.WeeklyExcerciseCaloric,
+		WeeklyWeightLiftingSessions: req.WeeklyWeightLiftingSessions,
+		WeeklyCardioMinutes:         req.WeeklyCardioMinutes,
+	}
+
+	err := h.repo.UpdatePersonalExerciseTarget(userTarget)
+	if err != nil {
+		Logger.Error().Err(err).Msg("[UpdatePersonalExerciseTarget] Failed to update personal exercise target")
+		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to update personal exercise target", nil)
+	}
+
+	return helper.JsonResponse(c, http.StatusOK, userTarget)
+}

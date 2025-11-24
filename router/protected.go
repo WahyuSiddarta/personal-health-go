@@ -27,6 +27,7 @@ func setupUserRoutes(group *echo.Group) {
 	usersGroup.GET("/personal-target", userHandlers.GetPersonalTarget)
 	usersGroup.PUT("/personal-target/nutrition", userHandlers.UpdatePersonalNutritionTarget, validator.ValidateRequest(&validator.PersonalNutritionTargetRequest{}))
 	usersGroup.PUT("/personal-target/body-measurement", userHandlers.UpdatePersonalBodyMeasurementTarget, validator.ValidateRequest(&validator.PersonalBodyMeasurementTargetRequest{}))
+	usersGroup.PUT("/personal-target/exercise", userHandlers.UpdatePersonalExerciseTarget, validator.ValidateRequest(&validator.PersonalExerciseTargetRequest{}))
 }
 
 func setupExcerciseRoutes(group *echo.Group) {
