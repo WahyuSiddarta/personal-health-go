@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/WahyuSiddarta/be_saham_go/config"
 	"github.com/WahyuSiddarta/be_saham_go/helper"
 	"github.com/WahyuSiddarta/be_saham_go/models"
 	"github.com/WahyuSiddarta/be_saham_go/validator"
@@ -19,6 +20,35 @@ type NutritionHandlers struct {
 // NewNutritionHandlers creates a new instance of nutrition handlers
 func NewNutritionHandlers(repo models.NutritionRepository) *NutritionHandlers {
 	return &NutritionHandlers{repo: repo}
+}
+
+func (h *NutritionHandlers) GetNutritionAllTime(c echo.Context) error {
+	var userId int = 1
+	// Get validated request from middleware
+	req := validator.GetValidatedQuery(c).(*validator.BodyMeasurementRequest)
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+	limit := config.Get().PaginationDefaultPageSize
+	userMeasurements, err := h.repo.GetNutritionAllTime(userId, limit, page)
+	if err != nil && err != sql.ErrNoRows {
+		Logger.Error().Err(err).Msg("[GetNutritionAllTime] Failed to get  nutrition intake")
+		return helper.ErrorResponse(c, http.StatusInternalServerError, "Failed to get  nutrition intake", nil)
+	}
+
+	hasNext := false
+	if len(userMeasurements) > limit {
+		hasNext = true
+		userMeasurements = userMeasurements[:limit]
+	}
+
+	response := map[string]interface{}{
+		"measurements": userMeasurements,
+		"nextPage":     hasNext,
+	}
+
+	return helper.JsonResponse(c, http.StatusOK, response)
 }
 
 // / Overview Nutrition Handlers

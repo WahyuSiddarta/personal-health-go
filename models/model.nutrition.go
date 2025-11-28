@@ -79,6 +79,27 @@ type NutritionRepository interface {
 	FindUserTodayIntake(userID int) ([]NutritionTracker, error)
 
 	GetNutritionChartData(userID int) ([]NutritionChartData, error)
+	GetNutritionAllTime(userID, limit, page int) ([]NutritionTracker, error)
+}
+
+func (r *nutritionRepository) GetNutritionAllTime(userId, limit, page int) ([]NutritionTracker, error) {
+	db := GetDB().PostgreDBManager.RW
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+
+	offset := (page - 1) * limit
+	limit = limit + 1
+
+	var measurements []NutritionTracker
+	query := `SELECT 
+	user_id, food_id, category, created_at, fat,
+	protein, carbohydrate, caloric, name 
+ FROM users_food_intake 
+ WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+
+	err := db.Select(&measurements, query, userId, limit, offset)
+	return measurements, err
 }
 
 // / Overview Nutrition Handlers

@@ -61,6 +61,7 @@ func setupFoodNutritionRoutes(group *echo.Group) {
 
 	// Overview nutrition routes can be added here
 	nutritionGroup.GET("/chart", nutritionHandler.GetNutritionChartData)
+	nutritionGroup.GET("/all-the-time", nutritionHandler.GetNutritionAllTime, validator.ValidateQuery(&validator.BodyMeasurementRequest{}))
 }
 
 func setupBodyMeasurementRoutes(group *echo.Group) {
